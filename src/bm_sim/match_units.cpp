@@ -952,10 +952,10 @@ MatchUnitGeneric<K, V>::add_entry_(const std::vector<MatchKeyParam> &match_key,
                                    V value, entry_handle_t *handle,
                                    int priority) {
 
-  ofstream myfile;
-  myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt");
-  myfile << "add_entry_.\n";
-  myfile.close();
+  //std::ofstream myfile;
+  //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+  //myfile << "add_entry_.\n";
+  //myfile.close();
 
   MatchErrorCode status;
   Entry entry;

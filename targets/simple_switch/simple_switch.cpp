@@ -306,6 +306,11 @@ SimpleSwitch::ingress_thread() {
     std::unique_ptr<Packet> packet;
     input_buffer.pop_back(&packet);
 
+    //std::ofstream myfile;
+    //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+    //myfile << "packet processed.\n";
+    //myfile.close();
+
     // TODO(antonin): only update these if swapping actually happened?
     Parser *parser = this->get_parser("parser");
     Pipeline *ingress_mau = this->get_pipeline("ingress");
@@ -395,6 +400,10 @@ SimpleSwitch::ingress_thread() {
         auto packet_copy = copy_ingress_pkt(
             packet, PKT_INSTANCE_TYPE_RESUBMIT, field_list_id);
         input_buffer.push_front(std::move(packet_copy));
+
+        //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+        //myfile << "packet resubmitted.\n";
+        //myfile.close();
         continue;
       }
     }
