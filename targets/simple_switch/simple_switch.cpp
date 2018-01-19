@@ -27,6 +27,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>
 
 #include "simple_switch.h"
 
@@ -68,16 +70,16 @@ extern int import_primitives();
 SimpleSwitch::SimpleSwitch(int max_port, bool enable_swap)
   : Switch(enable_swap),
     max_port(max_port),
-    input_buffer(1024),
+    input_buffer(2048),
 #ifdef SSWITCH_PRIORITY_QUEUEING_ON
     egress_buffers(max_port, nb_egress_threads,
-                   64, EgressThreadMapper(nb_egress_threads),
+                   512, EgressThreadMapper(nb_egress_threads),
                    SSWITCH_PRIORITY_QUEUEING_NB_QUEUES),
 #else
     egress_buffers(max_port, nb_egress_threads,
-                   64, EgressThreadMapper(nb_egress_threads)),
+                   512, EgressThreadMapper(nb_egress_threads)),
 #endif
-    output_buffer(128),
+    output_buffer(2048),
     // cannot use std::bind because of a clang bug
     // https://stackoverflow.com/questions/32030141/is-this-incorrect-use-of-stdbind-or-a-compiler-bug
     my_transmit_fn([this](int port_num, const char *buffer, int len) {
@@ -228,11 +230,21 @@ SimpleSwitch::transmit_thread() {
   while (1) {
     std::unique_ptr<Packet> packet;
     output_buffer.pop_back(&packet);
+    // if (packet->get_egress_port() > 0)
+    // {
+    //   std::ofstream myfile;
+    //   myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+    //   myfile << "Transmitting packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
+    //   myfile << "output buffer size: " << output_buffer.size() << std::endl;
+    //   myfile.close();
+    // }
+
     BMELOG(packet_out, *packet);
     BMLOG_DEBUG_PKT(*packet, "Transmitting packet of size {} out of port {}",
                     packet->get_data_size(), packet->get_egress_port());
     my_transmit_fn(packet->get_egress_port(),
                    packet->data(), packet->get_data_size());
+    std::this_thread::sleep_for (std::chrono::milliseconds(1));
   }
 }
 
@@ -315,7 +327,7 @@ SimpleSwitch::ingress_thread() {
     Parser *parser = this->get_parser("parser");
     Pipeline *ingress_mau = this->get_pipeline("ingress");
 
-    phv = packet->get_phv();
+    phv = packet->get_phv(); //get a phv pointer
 
     int ingress_port = packet->get_ingress_port();
     (void) ingress_port;
@@ -400,13 +412,21 @@ SimpleSwitch::ingress_thread() {
         auto packet_copy = copy_ingress_pkt(
             packet, PKT_INSTANCE_TYPE_RESUBMIT, field_list_id);
         input_buffer.push_front(std::move(packet_copy));
-
+        //std::this_thread::sleep_for (std::chrono::seconds(1));
+        //std::ofstream myfile;
         //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
         //myfile << "packet resubmitted.\n";
         //myfile.close();
         continue;
       }
     }
+
+    // {
+    //   std::ofstream myfile;
+    //   myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+    //   myfile << "input buffer size1: " << input_buffer.size() << std::endl;
+    //   myfile.close();
+    // }
 
     Field &f_instance_type = phv->get_field("standard_metadata.instance_type");
 
@@ -438,8 +458,22 @@ SimpleSwitch::ingress_thread() {
 
     if (egress_port == 511) {  // drop packet
       BMLOG_DEBUG_PKT(*packet, "Dropping packet at the end of ingress");
+      //std::ofstream myfile;
+      //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+      //myfile << "packet dropped.\n";
+      //myfile.close();
       continue;
     }
+
+    //if (egress_port > 0)
+    //{
+      //std::ofstream myfile;
+      //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+      //myfile << "ingress packet from " << ingress_port << " sent to " << egress_port << std::endl;
+      //myfile << "input buffer size2: " << input_buffer.size() << std::endl;
+      //myfile.close();
+    //}
+
 
     enqueue(egress_port, std::move(packet));
   }
@@ -545,6 +579,16 @@ SimpleSwitch::egress_thread(size_t worker_id) {
       }
     }
 
+    // if (packet->get_egress_port() > 0)
+    // {
+    //   std::ofstream myfile;
+    //   myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+    //   myfile << "egress packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
+    //   //myfile << "input buffer size2: " << input_buffer.size() << std::endl;
+    //   myfile.close();
+    // }
+    if (packet->get_egress_port() > 0){
     output_buffer.push_front(std::move(packet));
+    }
   }
 }
