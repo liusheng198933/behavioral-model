@@ -70,7 +70,7 @@ extern int import_primitives();
 SimpleSwitch::SimpleSwitch(int max_port, bool enable_swap)
   : Switch(enable_swap),
     max_port(max_port),
-    input_buffer(2048),
+    input_buffer(4096),
 #ifdef SSWITCH_PRIORITY_QUEUEING_ON
     egress_buffers(max_port, nb_egress_threads,
                    512, EgressThreadMapper(nb_egress_threads),
@@ -79,7 +79,7 @@ SimpleSwitch::SimpleSwitch(int max_port, bool enable_swap)
     egress_buffers(max_port, nb_egress_threads,
                    512, EgressThreadMapper(nb_egress_threads)),
 #endif
-    output_buffer(2048),
+    output_buffer(4096),
     // cannot use std::bind because of a clang bug
     // https://stackoverflow.com/questions/32030141/is-this-incorrect-use-of-stdbind-or-a-compiler-bug
     my_transmit_fn([this](int port_num, const char *buffer, int len) {
@@ -227,24 +227,43 @@ SimpleSwitch::set_transmit_fn(TransmitFn fn) {
 
 void
 SimpleSwitch::transmit_thread() {
+  auto start_time = std::chrono::high_resolution_clock::now();
+  auto end_time = std::chrono::high_resolution_clock::now();
   while (1) {
     std::unique_ptr<Packet> packet;
     output_buffer.pop_back(&packet);
+
+    end_time = std::chrono::high_resolution_clock::now();
     // if (packet->get_egress_port() > 0)
-    // {
-    //   std::ofstream myfile;
-    //   myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
-    //   myfile << "Transmitting packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
-    //   myfile << "output buffer size: " << output_buffer.size() << std::endl;
-    //   myfile.close();
-    // }
+    //end_time = std::chrono::high_resolution_clock::now();
+    //{
+      //std::ofstream myfile;
+      //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+      //myfile << "Transmitting packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
+      //myfile << "output buffer size: " << output_buffer.size() << std::endl;
+      //myfile << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() << std::endl;
+      //myfile.close();
+    //}
+    if (std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() < 500)
+    {
+      std::this_thread::sleep_for (std::chrono::microseconds(500));
+      // std::ofstream myfile;
+      // myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
+      // myfile << "Transmitting packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
+      // myfile << "sleep time: " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() << std::endl;
+      // myfile.close();
+    }
+    //start_time = std::chrono::high_resolution_clock::now();
 
     BMELOG(packet_out, *packet);
     BMLOG_DEBUG_PKT(*packet, "Transmitting packet of size {} out of port {}",
                     packet->get_data_size(), packet->get_egress_port());
     my_transmit_fn(packet->get_egress_port(),
                    packet->data(), packet->get_data_size());
-    std::this_thread::sleep_for (std::chrono::milliseconds(1));
+    //std::this_thread::sleep_for (std::chrono::microseconds(500));
+
+    start_time = std::chrono::high_resolution_clock::now();
+    //std::this_thread::sleep_for (std::chrono::milliseconds(1));
   }
 }
 

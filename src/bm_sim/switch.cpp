@@ -234,6 +234,7 @@ SwitchWContexts::init_from_options_parser(
     Logger::set_logger_file(parser.file_logger, parser.log_flush);
 
   Logger::set_log_level(parser.log_level);
+  //Logger::set_log_level(Logger::LogLevel::EMERG);
 
   if (parser.no_p4)
     status = init_objects_empty(parser.device_id, transport);
