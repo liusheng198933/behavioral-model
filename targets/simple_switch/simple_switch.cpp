@@ -158,6 +158,8 @@ SimpleSwitch::receive_(int port_num, const char *buffer, int len) {
   }
 
   input_buffer.push_front(std::move(packet));
+  //input_buffer.push_front_adv(std::move(packet), true);
+  //BMLOG_ERROR("Added packet");
   return 0;
 }
 
@@ -244,15 +246,15 @@ SimpleSwitch::transmit_thread() {
       //myfile << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() << std::endl;
       //myfile.close();
     //}
-    if (std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() < 500)
-    {
-      std::this_thread::sleep_for (std::chrono::microseconds(500));
+    //if (std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() < 500)
+    //{
+      //std::this_thread::sleep_for (std::chrono::microseconds(500));
       // std::ofstream myfile;
       // myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
       // myfile << "Transmitting packet from " << packet->get_ingress_port() << " sent to " << packet->get_egress_port() << std::endl;
       // myfile << "sleep time: " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() << std::endl;
       // myfile.close();
-    }
+    //}
     //start_time = std::chrono::high_resolution_clock::now();
 
     BMELOG(packet_out, *packet);
@@ -336,6 +338,20 @@ SimpleSwitch::ingress_thread() {
   while (1) {
     std::unique_ptr<Packet> packet;
     input_buffer.pop_back(&packet);
+    //BMLOG_ERROR("ingress thread running");
+    //input_buffer.pop_back_adv(&packet);
+    if (packet == nullptr) continue;
+
+
+    //if (extra_buffer.is_not_empty())
+    //{
+    //  input_buffer.pop_back(&packet);
+    //}
+    //else
+    //{
+    //  input_buffer.pop_back(&packet);
+    //}
+
 
     //std::ofstream myfile;
     //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
@@ -430,7 +446,11 @@ SimpleSwitch::ingress_thread() {
         // optimized way of doing this
         auto packet_copy = copy_ingress_pkt(
             packet, PKT_INSTANCE_TYPE_RESUBMIT, field_list_id);
-        input_buffer.push_front(std::move(packet_copy));
+
+        //input_buffer.push_front(std::move(packet_copy));
+        input_buffer.push_front(std::move(packet_copy), false);
+
+        //BMLOG_ERROR("Added packet");
         //std::this_thread::sleep_for (std::chrono::seconds(1));
         //std::ofstream myfile;
         //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
@@ -481,6 +501,7 @@ SimpleSwitch::ingress_thread() {
       //myfile.open ("/home/shengliu/Workspace/behavioral-model/targets/simple_switch_grpc/newtest/log.txt", std::ios::out | std::ios::app);
       //myfile << "packet dropped.\n";
       //myfile.close();
+      //BMLOG_ERROR("Removed packet");
       continue;
     }
 
@@ -495,6 +516,7 @@ SimpleSwitch::ingress_thread() {
 
 
     enqueue(egress_port, std::move(packet));
+    //BMLOG_ERROR("Removed packet");
   }
 }
 
@@ -593,7 +615,9 @@ SimpleSwitch::egress_thread(size_t worker_id) {
         size_t packet_size = packet_copy->get_data_size();
         packet_copy->set_register(PACKET_LENGTH_REG_IDX, packet_size);
         phv_copy->get_field("standard_metadata.packet_length").set(packet_size);
+        //input_buffer.push_front(std::move(packet_copy));
         input_buffer.push_front(std::move(packet_copy));
+        //BMLOG_ERROR("Added packet");
         continue;
       }
     }

@@ -379,8 +379,8 @@ MatchTable::add_entry(const std::vector<MatchKeyParam> &match_key,
 
     BMLOG_DEBUG(dump_entry_string(*handle));
     //BMLOG_DEBUG("debug");
-    BMLOG_ERROR("Added entry {} to table '{}'", *handle, get_name());
-    BMLOG_ERROR(dump_entry_string(*handle));
+    //BMLOG_ERROR("Added entry {} to table '{}'", *handle, get_name());
+    //BMLOG_ERROR(dump_entry_string(*handle));
     //bm::Logger::get()->debug("debug2");
     //bm::Logger::get()->error("error2");
     //bm::Logger::get()->warn("warn");
@@ -406,7 +406,7 @@ MatchTable::delete_entry(entry_handle_t handle) {
 
   if (rc == MatchErrorCode::SUCCESS) {
     BMLOG_DEBUG("Removed entry {} from table '{}'", handle, get_name());
-    BMLOG_ERROR("Removed entry {} from table '{}'", handle, get_name());
+    //BMLOG_ERROR("Removed entry {} from table '{}'", handle, get_name());
     //BMLOG_ERROR(dump_entry_string(handle));
   } else {
     BMLOG_ERROR("Error when trying to remove entry {} from table '{}'",

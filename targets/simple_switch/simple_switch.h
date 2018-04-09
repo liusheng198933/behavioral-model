@@ -28,6 +28,7 @@
 #include <bm/bm_sim/event_logger.h>
 #include <bm/bm_sim/simple_pre_lag.h>
 
+
 #include <memory>
 #include <chrono>
 #include <thread>
@@ -53,6 +54,7 @@ using ticks = std::chrono::nanoseconds;
 
 using bm::Switch;
 using bm::Queue;
+using bm::Advqueue;
 using bm::Packet;
 using bm::PHV;
 using bm::Parser;
@@ -159,7 +161,9 @@ class SimpleSwitch : public Switch {
 
  private:
   int max_port;
-  Queue<std::unique_ptr<Packet> > input_buffer;
+  Advqueue<std::unique_ptr<Packet> > input_buffer;
+  //Queue<std::unique_ptr<Packet> > input_buffer;
+  //Queue<std::unique_ptr<Packet> > extra_buffer;
 #ifdef SSWITCH_PRIORITY_QUEUEING_ON
   bm::QueueingLogicPriRL<std::unique_ptr<Packet>, EgressThreadMapper>
 #else
